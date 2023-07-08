@@ -3,12 +3,14 @@ from pyrogram import Client, filters
 from pyrogram.types import ForceReply
 import subprocess
 from pyrogram.types import InlineKeyboardMarkup , InlineKeyboardButton , ReplyKeyboardMarkup , CallbackQuery
+from os import system as cmd
+
 
 bot = Client(
     "merger",
     api_id=17983098,
     api_hash="ee28199396e0925f1f44d945ac174f64",
-    bot_token="6169974916:AAHl_RThcfUk7kgPTUDhwBtMBqNhbMjExOg"
+    bot_token="6169974916:AAFDIMKpz1ImOoE6oyDufm1t20gQhLyTcPE"
 )
 
 CHOOSE_UR_LANG = "أرسل باقي الصوتيات بالترتيب ثم اضغط دمج الآن  "
@@ -28,12 +30,17 @@ def _telegram_file(client, message):
   file = message
   global file_path
   file_path = message.download(file_name="./downloads/")
-  with open('list.txt','a') as f:
-      f.write(f"file '{file_path}'' \n")
   filename = os.path.basename(file_path)
   realname, ext = os.path.splitext(filename)
   global mp3file
   mp3file = realname+".mp3"
+  global wavfile
+  wavfile = realname+".wav"
+  global wavfilepath
+  wavfilepath = "./downloads/"+wavfile
+  cmd(f'mv {file_path} {wavfilepath}')
+  with open('list.txt','a') as f:
+      f.write(f"file '{wavfilepath}' \n")
   message.reply(
              text = CHOOSE_UR_LANG,
              reply_markup = InlineKeyboardMarkup(CHOOSE_UR_LANG_BUTTONS)
@@ -47,12 +54,15 @@ def callback_query(CLIENT,CallbackQuery):
       
       "جار الدمج"
   )   
-  subprocess.call(['ffmpeg','-f','concat','-safe','0','-i','list.txt', mp3file,'-y']) 
+  subprocess.call(['ffmpeg','-f','concat','-safe','0','-i','list.txt', wavfile,'-y']) 
+  cmd(f'ffmpeg -i {wavfile} -q:a 0 -map a {mp3file} -y')   
   with open(mp3file, 'rb') as f:
          bot.send_audio(user_id, f)
   subprocess.call(['unlink',"list.txt"]) 
   subprocess.call(['unlink',mp3file]) 
-  subprocess.call(['unlink',file_path]) 
+  subprocess.call(['unlink',wavfilepath]) 
+  subprocess.call(['unlink',wavfile]) 
+
 
 
        
